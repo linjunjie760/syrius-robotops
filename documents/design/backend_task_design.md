@@ -1424,11 +1424,11 @@ None.
 
 ---
 
-## 43. DbusPowerTask
+## 43. RobotPowerTask
 
 ### Overview
 
-Powers a robot off or reboots it by invoking a method on the Syrius bootstrapper D-Bus service over SSH. The same resolver backs both the robot list power buttons (executed directly by `RobotPowerService`, without a flow) and the batch `Shutdown Robots` / `Reboot Robots` task types, so both paths issue identical commands.
+Powers a robot off by invoking the Syrius bootstrapper D-Bus `Shutdown` method, or restarts it with `sudo reboot`; both run over SSH. The same resolver backs both the robot list power buttons (executed directly by `RobotPowerService`, without a flow) and the batch `Shutdown Robots` / `Reboot Robots` task types, so both paths issue identical commands.
 
 ### Input Parameters
 
@@ -1444,9 +1444,11 @@ Same as `SshCommandTask`.
 
 ### Notes
 
-- Command: `dbus-send --system --print-reply --dest=com.syriusrobotics.bootstrapper /com/syriusrobotics/bootstrapper com.syriusrobotics.bootstrapper.system.{Shutdown|Reboot}`
-- The command contains no `&&`, so `SshCommandTask` sudo-wrapping prefixes it exactly once.
-- Power actions are fire-and-forget: `onExec` ignores every failure and always returns `{ done: true, success: true, stdout: "", stderr: "", exitCode: 0 }`, logging the underlying error as a warning. The outcome can never be confirmed reliably because the host powers off or restarts as soon as the D-Bus call is delivered: the `--print-reply` return is usually lost (the host goes down first, yielding `org.freedesktop.DBus.Error.NoReply`, exit code 1) and the SSH session then drops. This covers both the direct robot-list action and the batch `shutdown-robots` / `reboot-robots` flows.
+- Command:
+  - `shutdown`: `dbus-send --system --print-reply --dest=com.syriusrobotics.bootstrapper /com/syriusrobotics/bootstrapper com.syriusrobotics.bootstrapper.system.Shutdown`
+  - `reboot`: `reboot` (elevated to `sudo reboot` by `SshCommandTask`)
+- Neither command contains `&&`, so `SshCommandTask` sudo-wrapping prefixes it exactly once.
+- Power actions are fire-and-forget: `onExec` ignores every failure and always returns `{ done: true, success: true, stdout: "", stderr: "", exitCode: 0 }`, logging the underlying error as a warning. The outcome can never be confirmed reliably because the host powers off or restarts as soon as the command is delivered: for `shutdown` the `--print-reply` return is usually lost (the host goes down first, yielding `org.freedesktop.DBus.Error.NoReply`, exit code 1), and in both cases the SSH session then drops. This covers both the direct robot-list action and the batch `shutdown-robots` / `reboot-robots` flows.
 - `powerAction` is required and validated; a missing or unknown value throws before any SSH connection is opened.
 - Batch DAGs pass the action as a literal (`params: { powerAction: { value: "shutdown" } }`), so the task types require no user parameters.
-- Mock variant (`MockDbusPowerTask`) logs the requested action, sleeps ~1 s, and returns success so flows, direct power actions, and E2E can run without a robot.
+- Mock variant (`MockRobotPowerTask`) logs the requested action, sleeps ~1 s, and returns success so flows, direct power actions, and E2E can run without a robot.

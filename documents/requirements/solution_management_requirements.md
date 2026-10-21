@@ -527,22 +527,22 @@ TaskFlowEngine 持久化的 `user` 类型任务（Flow）数据 Schema：
 **FR-SOL-021**：系统应支持对当前解决方案中的单台机器人执行关机与重启操作（电源操作）。
 
 - 机器人界面（网格视图与列表视图）中每台机器人提供 "Shutdown" 与 "Reboot" 两个操作按钮。
-- 两个操作均在机器人上通过 SSH 执行 bootstrapper D-Bus 方法：
-  - 关机：`dbus-send --system --print-reply --dest=com.syriusrobotics.bootstrapper /com/syriusrobotics/bootstrapper com.syriusrobotics.bootstrapper.system.Shutdown`
-  - 重启：`dbus-send --system --print-reply --dest=com.syriusrobotics.bootstrapper /com/syriusrobotics/bootstrapper com.syriusrobotics.bootstrapper.system.Reboot`
+- 两个操作均通过 SSH 在机器人上执行：
+  - 关机：调用 bootstrapper D-Bus 方法 `dbus-send --system --print-reply --dest=com.syriusrobotics.bootstrapper /com/syriusrobotics/bootstrapper com.syriusrobotics.bootstrapper.system.Shutdown`
+  - 重启：执行 `sudo reboot`
 - 执行前必须弹出确认对话框（说明操作影响并展示目标机器人 alias 与 address），用户确认后才下发；取消则不产生任何请求。
 - 确认后前端调用 `POST /api/solutions/{solutionId}/robots/{robotId}/power`，请求体为 `{ "action": "shutdown" | "reboot" }`。
 - 该操作为**即时动作**，不创建任务（task/flow）记录，也不出现在 Tasks 子界面中；后端在请求处理过程中直接执行 SSH 命令并返回结果。
-- 关机与重启为"即发即忘"操作：机器人一旦收到 D-Bus 调用即断电/重启，结果无法可靠确认（`--print-reply` 的返回通常丢失，SSH 会话随之中断）。因此后端**忽略所有失败**——无论机器人是否可达、SSH 连接是否中断、命令是否返回非 0 退出码——一律视为执行成功，失败原因仅记录为 warning 日志。
+- 关机与重启为"即发即忘"操作：机器人一旦收到关机/重启命令即断电/重启，结果无法可靠确认（关机时 `--print-reply` 的返回通常丢失，两种操作下 SSH 会话都会随之中断）。因此后端**忽略所有失败**——无论机器人是否可达、SSH 连接是否中断、命令是否返回非 0 退出码——一律视为执行成功，失败原因仅记录为 warning 日志。
 - 仅在请求层面出错（如机器人记录不存在）时，前端才以错误提示展示失败原因。
 - 用户确认后立即关闭确认对话框（不等待请求完成），电源请求在后台执行；执行结果通过成功/失败提示（toast）异步反馈，避免用户停留在对话框等待。
 
 **FR-SOL-021a**：系统应提供两个面向多台机器人的批量电源任务类型（"Shutdown Robots" 与 "Reboot Robots"）。
 
 - 两个任务类型通过 Tasks 子界面的 Create Task 流程创建，`robotSelection.mode = "multiple"`，且不需要额外参数（`params` 为空）。
-- 为每台选中的机器人创建一条独立 flow，DAG 为单节点，调用后端 `DbusPowerTask`，`powerAction` 分别为 `"shutdown"` / `"reboot"`。
+- 为每台选中的机器人创建一条独立 flow，DAG 为单节点，调用后端 `RobotPowerTask`，`powerAction` 分别为 `"shutdown"` / `"reboot"`。
 - 批量任务使用的 SSH 命令与列表按钮的关机/重启命令完全一致。
-- 与列表按钮一致，批量任务同样忽略失败（`DbusPowerTask` 对任何失败均返回成功），因此对应 flow 应到达 `COMPLETED`。
+- 与列表按钮一致，批量任务同样忽略失败（`RobotPowerTask` 对任何失败均返回成功），因此对应 flow 应到达 `COMPLETED`。
 - 预期结果变量分别为 `shutdown_done` / `reboot_done`。
 - 任务执行记录保留在 Tasks 子界面，可由用户查看状态与结果。
 

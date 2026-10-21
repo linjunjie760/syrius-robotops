@@ -5,28 +5,30 @@ export type PowerAction = "shutdown" | "reboot";
 
 const DBUS_DEST = "com.syriusrobotics.bootstrapper";
 const DBUS_PATH = "/com/syriusrobotics/bootstrapper";
+const SHUTDOWN_METHOD = `${DBUS_DEST}.system.Shutdown`;
 
-const POWER_METHODS: Record<PowerAction, string> = {
-  shutdown: `${DBUS_DEST}.system.Shutdown`,
-  reboot: `${DBUS_DEST}.system.Reboot`,
-};
+/** Plain reboot command, elevated to sudo by SshCommandTask. */
+const REBOOT_COMMAND = "reboot";
 
 function isPowerAction(value: unknown): value is PowerAction {
   return value === "shutdown" || value === "reboot";
 }
 
 function buildPowerCommand(action: PowerAction): string {
+  if (action === "reboot") {
+    return REBOOT_COMMAND;
+  }
   return [
     "dbus-send",
     "--system",
     "--print-reply",
     `--dest=${DBUS_DEST}`,
     DBUS_PATH,
-    POWER_METHODS[action],
+    SHUTDOWN_METHOD,
   ].join(" ");
 }
 
-export class DbusPowerTask extends SshCommandTask {
+export class RobotPowerTask extends SshCommandTask {
   protected override buildParams(params: ValueMap): SshCommandParams {
     return super.buildParams({
       ...params,
@@ -45,12 +47,13 @@ export class DbusPowerTask extends SshCommandTask {
   }
 
   /**
-   * Power actions are fire-and-forget. The host powers off or restarts as soon
-   * as the D-Bus call is delivered, so the outcome can never be confirmed
-   * reliably: the `--print-reply` return is usually lost (the host goes down
-   * first, yielding `org.freedesktop.DBus.Error.NoReply`) and the SSH session
-   * then drops. Every failure is therefore ignored and reported as success;
-   * the underlying error is still logged as a warning.
+   * Power actions are fire-and-forget. Shutdown issues the bootstrapper D-Bus
+   * Shutdown call, reboot runs `reboot`. The host goes down as soon as the
+   * command is delivered, so the outcome can never be confirmed reliably: for
+   * shutdown the `--print-reply` return is usually lost (yielding
+   * `org.freedesktop.DBus.Error.NoReply`) and in both cases the SSH session
+   * drops. Every failure is therefore ignored and reported as success; the
+   * underlying error is still logged as a warning.
    */
   protected override async onExec(params: ValueMap, context?: ValueMap): Promise<ValueMap> {
     try {

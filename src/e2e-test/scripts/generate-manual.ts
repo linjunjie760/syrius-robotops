@@ -258,7 +258,7 @@ async function run(browser: Browser) {
   await p.getByRole("button", { name: "Shutdown robot" }).first().click();
   await p.waitForTimeout(400);
   await capture(p, shot("Robot Power Control — Shutdown Confirmation",
-    "Each robot row (List View) and each robot card (Grid View) exposes two power buttons: Shutdown and Reboot. Clicking Shutdown opens this confirmation dialog showing the robot alias and address. Click 'Shutdown' to send the D-Bus shutdown command through the bootstrapper service, or 'Cancel' to abort. The Reboot button follows the same flow and issues a restart command. The batch 'Shutdown Robots' and 'Reboot Robots' task types in the Tasks tab send the identical commands."));
+    "Each robot row (List View) and each robot card (Grid View) exposes two power buttons: Shutdown and Reboot. Clicking Shutdown opens this confirmation dialog showing the robot alias and address. Click 'Shutdown' to send the D-Bus shutdown command through the bootstrapper service, or 'Cancel' to abort. The Reboot button follows the same flow and runs sudo reboot. The batch 'Shutdown Robots' and 'Reboot Robots' task types in the Tasks tab send the identical commands."));
   await p.getByRole("dialog", { name: "Shutdown Robot" }).getByRole("button", { name: "Cancel" }).click();
   await p.waitForTimeout(300);
 

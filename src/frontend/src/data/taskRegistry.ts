@@ -761,7 +761,7 @@ const SHUTDOWN_ROBOTS_DAG: DagDefinition = {
     shutdown: {
       requires: ["robotIp", "robotPort"],
       resolver: {
-        name: "DbusPowerTask",
+        name: "RobotPowerTask",
         params: {
           robotIp: "robotIp",
           robotPort: "robotPort",
@@ -779,7 +779,7 @@ const REBOOT_ROBOTS_DAG: DagDefinition = {
     reboot: {
       requires: ["robotIp", "robotPort"],
       resolver: {
-        name: "DbusPowerTask",
+        name: "RobotPowerTask",
         params: {
           robotIp: "robotIp",
           robotPort: "robotPort",
@@ -1283,7 +1283,7 @@ export const TASK_REGISTRY: TaskRegistry = {
       type: "reboot-robots",
       name: "Reboot Robots",
       description:
-        "Send a reboot command to the selected robots through the bootstrapper D-Bus interface.",
+        "Restart the selected robots by running sudo reboot over SSH.",
       robotSelection: {
         mode: "multiple",
         description: "Select one or more target robots to reboot.",

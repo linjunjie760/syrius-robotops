@@ -328,7 +328,7 @@ Shared fixtures and API utility helpers are in `fixtures/test-fixture.ts`.
 | Task Flow Engine | TC-TFE-001 ~ TC-TFE-035 | Flow lifecycle, SSE, persistence, recovery, resolver registry |
 | Cross-Module | TC-CROSS-001 ~ TC-CROSS-005 | Solution delete → refCount decrement, clone → refCount increment |
 | Blackbox Log Collection | TC-BBL-* | Protocol helpers, region config, task validation, mock result, flow integration, registration |
-| Robot Power Control | TC-PWR-001 ~ TC-PWR-013 | D-Bus shutdown/reboot command, validation, failure tolerance (all failures ignored), `RobotPowerService`, REST endpoint, batch DAGs |
+| Robot Power Control | TC-PWR-001 ~ TC-PWR-013 | Shutdown (D-Bus) and reboot commands, validation, failure tolerance (all failures ignored), `RobotPowerService`, REST endpoint, batch DAGs |
 | E2E (Playwright) | TC-E2E-SOL/ROB/TASK/ART/SL/CROSS/BBL | 84 browser-based tests against mock backend |
 
 Test case documents: `documents/test/solution_management_test_cases.md`, `documents/test/artifact_management_test_cases.md`, `documents/test/task_flow_engine_test_cases.md`, `documents/test/cross_module_test_cases.md`, `documents/test/blackbox_log_collection_test_cases.md`, `documents/test/robot_power_control_test_cases.md`
